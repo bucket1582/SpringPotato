@@ -3,3 +3,7 @@ main: $pluginMain
 depend: [ Kotlin, ProtocolLib ]
 api-version: '1.16'
 version: $version
+commands:
+  potato:
+    description: Commands related to the spring potato plugin.
+    usage: /potato
