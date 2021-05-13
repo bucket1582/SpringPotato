@@ -28,7 +28,7 @@ class EventListener : Listener {
     val playerDone: MutableMap<Material, ArrayList<Player>> = mutableMapOf()
     val suggester: MutableMap<Material, Player> = mutableMapOf()
     val suggestionTime: MutableMap<Material, LocalTime> = mutableMapOf()
-    val cooldown: Int = 5
+    val cooldown: Int = 6
 
     private val suggestionInventory = Bukkit.createInventory(
         null, InventoryType.DISPENSER, "제안"
@@ -135,6 +135,20 @@ class EventListener : Listener {
                     }
                 }
                 player.openInventory(suggestionInventory)
+                event.player.setCooldown(Material.NETHER_STAR, cooldown * 1200)
+
+                // 강제로 인벤토리 닫기; Reason = CANT_USE
+                val forceClosingInventory = Runnable {
+                    if (suggestionInventory.viewers.contains(player)) {
+                        player.closeInventory(InventoryCloseEvent.Reason.CANT_USE)
+                    }
+                }
+                
+                // 제안은 1분 안에
+                plugin?.apply {
+                    Bukkit.getScheduler().runTaskLater(this, forceClosingInventory, 1200)
+                }
+
             }
         }
     }
@@ -270,6 +284,9 @@ class EventListener : Listener {
         // 게임 시작 전에는 이벤트를 적용하지 않음.
         if (plugin?.isRunning != true) return
 
+        // Cant use로 닫힐 경우, 이벤트를 적용하지 않음.
+        if (event.reason == InventoryCloseEvent.Reason.CANT_USE) return
+
         val inventory = event.inventory
         if (inventory == suggestionInventory) {
             // 제안한 아이템과 난이도
@@ -336,8 +353,6 @@ class EventListener : Listener {
                 else -> {}
             }
 
-            event.player.setCooldown(Material.NETHER_STAR, cooldown * 1200)
-
             // map 에 추가하고, 시간 지나면 판정 및 없애기
             itemMap[item.type] = point
             playerDone[item.type] = ArrayList()
@@ -399,7 +414,8 @@ class EventListener : Listener {
         // 우클릭으로 제출
         if (action == Action.RIGHT_CLICK_AIR) {
             if (itemInMain.type in itemMap.keys &&
-                !(event.player in playerDone[itemInMain.type]!!)) {
+                !(event.player in playerDone[itemInMain.type]!!) &&
+                (event.player != suggester[itemInMain.type])) {
                 playerDone[itemInMain.type]!!.add(event.player)
                 Bukkit.broadcastMessage("${ChatColor.GREEN}${event.player.name}님이 ${itemInMain.type.name}을 제출했습니다!")
                 val firework = FireworkEffect.builder().apply {
