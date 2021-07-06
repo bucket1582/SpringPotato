@@ -63,5 +63,3 @@
 * Kotlin
 * Tap
 * Kommand
-* Unit test
-* Travis CI
