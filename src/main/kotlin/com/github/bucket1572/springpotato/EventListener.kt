@@ -1,9 +1,7 @@
 package com.github.bucket1572.springpotato
 
 import com.destroystokyo.paper.Title
-import com.github.noonmaru.kommand.argument.player
-import com.github.noonmaru.tap.effect.playFirework
-import com.github.noonmaru.tap.v1_16_R3.protocol.NMSPacketSupport
+import io.github.monun.tap.effect.playFirework
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.*
 import org.bukkit.entity.Player
@@ -17,7 +15,6 @@ import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.BookMeta
-import org.bukkit.inventory.meta.ItemMeta
 import java.time.LocalTime
 import java.time.LocalTime.now
 import kotlin.collections.ArrayList
@@ -37,19 +34,19 @@ class EventListener : Listener {
     private val easyIdx = ItemStack(
         Material.LIME_CONCRETE, 1
     )
-    private val easyTime = 1
+    private val easyTime = 3
     private val easyPoint = 2
 
     private val intermediateIdx = ItemStack(
         Material.YELLOW_CONCRETE, 1
     )
-    private val intermediateTime = 3
+    private val intermediateTime = 5
     private val intermediatePoint = 5
 
     private val hardIdx = ItemStack(
         Material.RED_CONCRETE, 1
     )
-    private val hardTime = 5
+    private val hardTime = 10
     private val hardPoint = 10
 
     private val nullItem = ItemStack(

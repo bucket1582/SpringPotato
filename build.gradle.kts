@@ -1,124 +1,72 @@
-import java.io.OutputStream
-
 plugins {
-    kotlin("jvm") version "1.4.21"
-    id("com.github.johnrengelman.shadow") version "5.2.0"
-//    `maven-publish`
+    kotlin("jvm") version "1.5.21"
+    kotlin("plugin.serialization") version "1.5.21"
+    id("com.github.johnrengelman.shadow") version "7.0.0"
 }
 
-val relocate = (findProperty("relocate") as? String)?.toBoolean() ?: true
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(16))
+    }
+}
 
 repositories {
-    mavenLocal()
     mavenCentral()
     maven(url = "https://papermc.io/repo/repository/maven-public/")
-    maven(url = "https://jitpack.io/")
 }
 
 dependencies {
-    compileOnly(kotlin("stdlib"))
-    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.1")
-    compileOnly("com.destroystokyo.paper:paper-api:1.16.4-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.17.1-R0.1-SNAPSHOT")
 
-    implementation("com.github.noonmaru:tap:3.2.7")
-    implementation("com.github.noonmaru:kommand:0.6.4")
+    implementation(kotlin("stdlib"))
+    implementation("io.github.monun:tap-api:4.1.2")
+    implementation("io.github.monun:kommand-api:2.6.4")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.7.2")
     testImplementation("org.mockito:mockito-core:3.6.28")
-    testImplementation("org.spigotmc:spigot:1.16.4-R0.1-SNAPSHOT")
 }
 
+project.extra.set("packageName", name.replace("-", ""))
+project.extra.set("pluginName", name.split('-').joinToString("") { it.capitalize() })
+
 tasks {
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = "11"
-    }
     processResources {
         filesMatching("**/*.yml") {
             expand(project.properties)
+            expand(project.extra.properties)
         }
     }
+
     test {
         useJUnitPlatform()
-        doLast {
-            file("logs").deleteRecursively()
-        }
     }
-    create<Jar>("sourcesJar") {
-        from(sourceSets["main"].allSource)
-        archiveClassifier.set("sources")
-    }
-    shadowJar {
-        archiveBaseName.set(project.property("pluginName").toString())
+
+    create<Jar>("paperJar") {
+        from(sourceSets["main"].output)
+        archiveBaseName.set(project.extra.properties["pluginName"].toString())
         archiveVersion.set("") // For bukkit plugin update
-        archiveClassifier.set("") // Remove 'all'
 
-        if (relocate) {
-            relocate("com.github.noonmaru.kommand", "${rootProject.group}.${rootProject.name}.kommand")
-            relocate("com.github.noonmaru.tap", "${rootProject.group}.${rootProject.name}.tap")
-        }
-
-        doFirst {
-            println("relocate = $relocate")
-        }
-    }
-    build {
-        dependsOn(shadowJar)
-    }
-    create<Copy>("paper") {
-        from(shadowJar)
-        var dest = file(".paper/plugins")
-        // if plugin.jar exists in plugins change dest to plugins/update
-        if (File(dest, shadowJar.get().archiveFileName.get()).exists()) dest = File(dest, "update")
-        into(dest)
-    }
-    create<DefaultTask>("setupWorkspace") {
         doLast {
-            val versions = arrayOf(
-                "1.16.4"
-            )
-            val buildtoolsDir = file(".buildtools")
-            val buildtools = File(buildtoolsDir, "BuildTools.jar")
-
-            val maven = File(System.getProperty("user.home"), ".m2/repository/org/spigotmc/spigot/")
-            val repos = maven.listFiles { file: File -> file.isDirectory } ?: emptyArray()
-            val missingVersions = versions.filter { version ->
-                repos.find { it.name.startsWith(version) }?.also { println("Skip downloading spigot-$version") } == null
-            }.also { if (it.isEmpty()) return@doLast }
-
-            val download by registering(de.undercouch.gradle.tasks.download.Download::class) {
-                src("https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar")
-                dest(buildtools)
+            copy {
+                from(archiveFile)
+                val plugins = File(rootDir, ".debug/plugins/")
+                into(if (File(plugins, archiveFileName.get()).exists()) File(plugins, "update") else plugins)
             }
-            download.get().download()
+        }
+    }
 
-            runCatching {
-                for (v in missingVersions) {
-                    println("Downloading spigot-$v...")
+    shadowJar {
+        from(sourceSets["main"].output)
+        archiveBaseName.set(project.extra.properties["pluginName"].toString())
+        archiveVersion.set("") // For bukkit plugin update
 
-                    javaexec {
-                        workingDir(buildtoolsDir)
-                        main = "-jar"
-                        args = listOf("./${buildtools.name}", "--rev", v)
-                        // Silent
-                        standardOutput = OutputStream.nullOutputStream()
-                        errorOutput = OutputStream.nullOutputStream()
-                    }
-                }
-            }.onFailure {
-                it.printStackTrace()
+        doLast {
+            copy {
+                from(archiveFile)
+                val plugins = File(rootDir, ".debug/plugins/")
+                into(if (File(plugins, archiveFileName.get()).exists()) File(plugins, "update") else plugins)
             }
-            buildtoolsDir.deleteRecursively()
         }
     }
 }
-
-//publishing {
-//    publications {
-//        create<MavenPublication>(project.property("pluginName").toString()) {
-//            artifactId = project.name
-//            from(components["java"])
-//            artifact(tasks["sourcesJar"])
-//        }
-//    }
-//}

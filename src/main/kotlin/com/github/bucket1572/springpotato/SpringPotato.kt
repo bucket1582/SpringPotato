@@ -1,6 +1,6 @@
 package com.github.bucket1572.springpotato
 
-import com.github.noonmaru.kommand.kommand
+import io.github.monun.kommand.kommand
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.Bukkit
 import org.bukkit.Material
