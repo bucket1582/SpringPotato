@@ -7,3 +7,6 @@ commands:
   potato:
     description: Commands related to the spring potato plugin.
     usage: /potato
+libraries:
+  - io.github.monun:tap-api:4.1.2
+  - io.github.monun:kommand-api:2.6.4
