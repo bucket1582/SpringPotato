@@ -50,6 +50,9 @@ class SpringPotato : JavaPlugin() {
     private fun registerCommands() = kommand {
         register("potato") {
             then("start") {
+                requires {
+                    this.isPlayer && this.isOp
+                }
                 executes {
                     if (!isRunning) {
                         isRunning = true
@@ -72,10 +75,15 @@ class SpringPotato : JavaPlugin() {
                 }
             }
             then("stop") {
+                requires {
+                    this.isPlayer && this.isOp
+                }
                 executes {
                     if (isRunning) {
                         isRunning = false
                     }
+                    this.player.closeInventory()
+                    this.player.setCooldown(Material.NETHER_STAR, 0)
                 }
             }
             then("handlers") {

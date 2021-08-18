@@ -183,7 +183,7 @@ class EventListener : Listener {
                     val color = suggestion.let {
                         when (itemMap[it]) {
                             easyPoint -> ChatColor.GREEN
-                            intermediatePoint -> ChatColor.YELLOW
+                            intermediatePoint -> ChatColor.GOLD
                             hardPoint -> ChatColor.RED
                             else -> ChatColor.WHITE
                         }
