@@ -289,6 +289,12 @@ class EventListener : Listener {
             // 제안한 아이템과 난이도
             val item = inventory.contents[1] ?: return
 
+            // 네더의 별일 경우 (불가능)
+            if (item.type == Material.NETHER_STAR) {
+                event.player.sendMessage("${ChatColor.RED}네더의 별은 제안할 수 없습니다.")
+                return
+            }
+
             // 이미 제안한 아이템일 경우
             if (item.type in itemMap.keys) {
                 event.player.sendMessage("${ChatColor.RED}이미 제안이 존재합니다. 아이템은 돌려드리지 않습니다.")
