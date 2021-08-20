@@ -1,12 +1,12 @@
 package com.github.bucket1572.springpotato
 
+import com.github.bucket1572.springpotato.handlers.HandlerNames
+import com.github.bucket1572.springpotato.text_components.*
 import io.github.monun.tap.effect.playFirework
 import net.kyori.adventure.inventory.Book
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
-import net.md_5.bungee.api.ChatColor
 import org.bukkit.*
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -23,6 +23,7 @@ import java.time.LocalTime.now
 
 class EventListener : Listener {
     var plugin: SpringPotato? = null
+
     private val itemMap: MutableMap<Material, Int> = mutableMapOf()
     private val playerDone: MutableMap<Material, ArrayList<Player>> = mutableMapOf()
     private val suggester: MutableMap<Material, Player> = mutableMapOf()
@@ -57,29 +58,29 @@ class EventListener : Listener {
 
     init {
         easyIdx.editMeta {
-            it.displayName(Component.text("쉬움", TextColor.fromHexString("#00FF00")))
+            it.displayName(EasyIndexComponent("쉬움").getComponent())
             it.lore(
                 listOf(
-                    Component.text("시간: $easyTime", TextColor.fromHexString("#FFFFFF")),
-                    Component.text("점수: $easyPoint", TextColor.fromHexString("#FFFFFF"))
+                    DescriptionComponent("시간: $easyTime").getComponent(),
+                    DescriptionComponent("점수: $easyPoint").getComponent()
                 )
             )
         }
         intermediateIdx.editMeta {
-            it.displayName(Component.text("보통", TextColor.fromHexString("#FFFF00")))
+            it.displayName(IntermediateIndexComponent("보통").getComponent())
             it.lore(
                 listOf(
-                    Component.text("시간: $intermediateTime", TextColor.fromHexString("#FFFFFF")),
-                    Component.text("점수: $intermediatePoint", TextColor.fromHexString("#FFFFFF"))
+                    DescriptionComponent("시간: $intermediateTime").getComponent(),
+                    DescriptionComponent("점수: $intermediatePoint").getComponent()
                 )
             )
         }
         hardIdx.editMeta {
-            it.displayName(Component.text("어려움", TextColor.fromHexString("#FF0000")))
+            it.displayName(HardIndexComponent("어려움").getComponent())
             it.lore(
                 listOf(
-                    Component.text("시간: $hardTime", TextColor.fromHexString("#FFFFFF")),
-                    Component.text("점수: $hardPoint", TextColor.fromHexString("#FFFFFF"))
+                    DescriptionComponent("시간: $hardTime").getComponent(),
+                    DescriptionComponent("점수: $hardPoint").getComponent()
                 )
             )
         }
@@ -99,19 +100,19 @@ class EventListener : Listener {
         val itemInMain = player.inventory.itemInMainHand
 
         // 제안 전개
+        // TODO: 2021-08-21 Handlers 의 Equality Checker 로 핸들러 일치 확인
         if (action == Action.RIGHT_CLICK_AIR &&
             itemInMain.type == Material.NETHER_STAR &&
-            itemInMain.displayName() == ItemNames.SUGGESTION_HANDLER.component
+            itemInMain.itemMeta.displayName() == HandlerNames.SUGGESTION_HANDLER.component
         ) {
-            player.sendActionBar(Component.text("제안 중..."))
-            // 다른 사람이 제안 중일 경우
             when {
+                // 다른 사람이 제안 중일 경우
                 suggestionInventory.viewers.size > 0 -> {
-                    player.sendActionBar(Component.text("현재 다른 사람이 제안 중입니다.", TextColor.fromHexString("#FF0000")))
+                    player.sendActionBar(AlertComponent("현재 다른 사람이 제안 중입니다.").getComponent())
                 }
                 // 쿨타임일 경우
                 player.getCooldown(Material.NETHER_STAR) > 0 -> {
-                    player.sendActionBar(Component.text("아직 쿨타임이 끝나지 않았습니다.", TextColor.fromHexString("#FF0000")))
+                    player.sendActionBar(AlertComponent("아직 쿨타임이 끝나지 않았습니다.").getComponent())
                 }
                 // 아닐 경우
                 else -> {
@@ -160,15 +161,18 @@ class EventListener : Listener {
         val itemInMain = player.inventory.itemInMainHand
 
         // 제안 목록 열람
+        // TODO: 2021-08-21 Handlers 의 Equality Checker 로 핸들러 일치 확인
         if (action == Action.RIGHT_CLICK_AIR &&
             itemInMain.type == Material.NETHER_STAR &&
-            itemInMain.displayName() == ItemNames.SUGGESTION_LIST_HANDLER.component
+            itemInMain.itemMeta.displayName() == HandlerNames.SUGGESTION_LIST_HANDLER.component
         ) {
+            // TODO: 2021-08-21 UI 개선 -> GUI 로 바꾸기
             val book = Book.book(
-                ItemNames.SUGGESTION_LIST_HANDLER.component,
+                HandlerNames.SUGGESTION_LIST_HANDLER.component,
                 Component.text(" ")
             ).toBuilder()
 
+            // TODO: 2021-08-21 시간 계산은 LocalDate 적극적으로 활용하기;; 
             val time = now()
             val timeSec = time.hour * 3600 + time.minute * 60 + time.second
             var dummy = 0
@@ -181,11 +185,11 @@ class EventListener : Listener {
 
                 val duration = timeSec - perSec
 
-                val color = when (itemMap[suggestion]) {
-                    easyPoint -> "#00ff00"
-                    intermediatePoint -> "#deaa50"
-                    hardPoint -> "#ff0000"
-                    else -> "#ffffff"
+                val suggestionComponent = when (itemMap[suggestion]) {
+                    easyPoint -> EasyIndexComponent("${suggestion.name}:\n")
+                    intermediatePoint -> IntermediateIndexComponent("${suggestion.name}:\n")
+                    hardPoint -> HardIndexComponent("${suggestion.name}:\n")
+                    else -> EasyIndexComponent("${suggestion.name}:\n")
                 }
                 val remains = when (itemMap[suggestion]) {
                     easyPoint -> easyTime * 60 - duration
@@ -196,7 +200,7 @@ class EventListener : Listener {
                 val minute = remains / 60
                 val second = remains % 60
 
-                page.append(Component.text("${suggestion.name}:\n", TextColor.fromHexString(color)))
+                page.append(suggestionComponent.getComponent())
                 page.append(Component.text("$minute 분 $second 초 남음\n"))
 
                 dummy += 1
@@ -245,6 +249,7 @@ class EventListener : Listener {
             }
             // 다른 경우
             else {
+                // TODO: 2021-08-21 조금 더 좋은 로직이 있지 않을까?
                 // 1. 플레이어가 인벤토리 내부에서 place 하는 것이 아니다.
                 // 2. 플레이어가 제안 인벤토리 내의 1번 슬롯에 place one 하는 것이 아니다.
                 // then -> Cancel
@@ -285,18 +290,13 @@ class EventListener : Listener {
 
             // 네더의 별일 경우 (불가능)
             if (item.type == Material.NETHER_STAR) {
-                event.player.sendMessage(Component.text("네더의 별은 제안할 수 없습니다.", TextColor.fromHexString("#ff0000")))
+                event.player.sendMessage(AlertComponent("네더의 별은 제안할 수 없습니다.").getComponent())
                 return
             }
 
             // 이미 제안한 아이템일 경우
             if (item.type in itemMap.keys) {
-                event.player.sendMessage(
-                    Component.text(
-                        "이미 제안이 존재합니다. 아이템은 돌려드리지 않습니다.",
-                        TextColor.fromHexString("#ff0000")
-                    )
-                )
+                event.player.sendMessage(AlertComponent("이미 제안이 존재합니다. 아이템은 돌려드리지 않습니다.").getComponent())
                 return
             }
 
@@ -330,12 +330,13 @@ class EventListener : Listener {
             }
 
             // 아이템과 난이도 공표
+            // TODO: 2021-08-21 Refactoring: title 부분이 반복적 -> 메소드 묶기
             when (point) {
                 easyPoint -> {
                     val name = item.type.name
                     val title = Title.title(
-                        Component.text("느 집엔 이거 없지?", TextColor.fromHexString("#00ff00")),
-                        Component.text("$name 제출: 시간 제한 ${easyTime}분", TextColor.fromHexString("#ffffff")),
+                        EasyIndexComponent("느 집엔 이거 없지?").getComponent(),
+                        DescriptionComponent("$name 제출: 시간 제한 ${easyTime}분").getComponent(),
                         Title.Times.of(
                             Ticks.duration(5),
                             Ticks.duration(40),
@@ -349,8 +350,8 @@ class EventListener : Listener {
                 intermediatePoint -> {
                     val name = item.type.name
                     val title = Title.title(
-                        Component.text("느 집엔 이거 없지?", TextColor.fromHexString("#ffff00")),
-                        Component.text("$name 제출: 시간 제한 ${intermediateTime}분", TextColor.fromHexString("#ffffff")),
+                        IntermediateIndexComponent("느 집엔 이거 없지?").getComponent(),
+                        DescriptionComponent("$name 제출: 시간 제한 ${intermediateTime}분").getComponent(),
                         Title.Times.of(
                             Ticks.duration(5),
                             Ticks.duration(40),
@@ -364,8 +365,8 @@ class EventListener : Listener {
                 hardPoint -> {
                     val name = item.type.name
                     val title = Title.title(
-                        Component.text("느 집엔 이거 없지?", TextColor.fromHexString("#ff0000")),
-                        Component.text("$name 제출: 시간 제한 ${hardTime}분", TextColor.fromHexString("#ffffff")),
+                        HardIndexComponent("느 집엔 이거 없지?").getComponent(),
+                        DescriptionComponent("$name 제출: 시간 제한 ${hardTime}분").getComponent(),
                         Title.Times.of(
                             Ticks.duration(5),
                             Ticks.duration(40),
@@ -396,7 +397,7 @@ class EventListener : Listener {
                         score.score += 1
                         isMade += 1
                     }
-                    player.sendMessage("${ChatColor.RED}${item.type.name} 제출 기한 만료!")
+                    player.sendMessage(AlertComponent("${item.type.name} 제출 기한 만료!").getComponent())
                 }
 
                 // 아무도 못 만들었을 경우 +
@@ -446,10 +447,7 @@ class EventListener : Listener {
             ) {
                 playerDone[itemInMain.type]!!.add(event.player)
                 Bukkit.broadcast(
-                    Component.text(
-                        "${event.player.name}님이 ${itemInMain.type.name}을 제출했습니다!",
-                        TextColor.fromHexString("#00ff00")
-                    )
+                    SuccessComponent("${event.player.name}님이 ${itemInMain.type.name}을 제출했습니다!").getComponent()
                 )
                 val firework = FireworkEffect.builder().apply {
                     trail(true)

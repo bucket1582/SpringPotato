@@ -1,5 +1,7 @@
 package com.github.bucket1572.springpotato
 
+import com.github.bucket1572.springpotato.handlers.HandlerNames
+import com.github.bucket1572.springpotato.text_components.DescriptionComponent
 import io.github.monun.kommand.getValue
 import io.github.monun.kommand.kommand
 import net.kyori.adventure.text.Component
@@ -25,18 +27,18 @@ class SpringPotato : JavaPlugin() {
 
     init {
         suggestionHandler.editMeta {
-            it.displayName(ItemNames.SUGGESTION_HANDLER.component)
+            it.displayName(HandlerNames.SUGGESTION_HANDLER.component)
             it.lore(
                 listOf(
-                    Component.text("우클릭 시 제안 창을 열 수 있습니다.", TextColor.fromHexString("#ffffff"))
+                    DescriptionComponent("우클릭 시 제안 창을 열 수 있습니다.").getComponent()
                 )
             )
         }
         suggestionListHandler.editMeta {
-            it.displayName(ItemNames.SUGGESTION_LIST_HANDLER.component)
+            it.displayName(HandlerNames.SUGGESTION_LIST_HANDLER.component)
             it.lore(
                 listOf(
-                    Component.text("우클릭 시 제안 목록을 알 수 있습니다.", TextColor.fromHexString("#ffffff"))
+                    DescriptionComponent("우클릭 시 제안 목록을 알 수 있습니다.").getComponent()
                 )
             )
         }
