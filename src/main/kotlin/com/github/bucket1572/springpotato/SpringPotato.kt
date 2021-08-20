@@ -1,40 +1,44 @@
 package com.github.bucket1572.springpotato
 
+import io.github.monun.kommand.getValue
 import io.github.monun.kommand.kommand
-import net.md_5.bungee.api.ChatColor
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scoreboard.DisplaySlot
 import org.bukkit.scoreboard.Scoreboard
+import kotlin.math.roundToInt
 
 class SpringPotato : JavaPlugin() {
     var isRunning: Boolean = false
-    var suggestionHandler: ItemStack = ItemStack(
+    private var suggestionHandler: ItemStack = ItemStack(
         Material.NETHER_STAR
     )
-    var suggestionListHandler: ItemStack = ItemStack(
+    private var suggestionListHandler: ItemStack = ItemStack(
         Material.NETHER_STAR
     )
     var scoreboard: Scoreboard? = null
 
     init {
-        suggestionHandler.apply {
-            val meta = this.itemMeta
-            meta.setDisplayName("${ChatColor.LIGHT_PURPLE}제안")
-            meta.lore = listOf(
-                "${ChatColor.WHITE}우클릭 시 제안 창을 열 수 있습니다."
+        suggestionHandler.editMeta {
+            it.displayName(ItemNames.SUGGESTION_HANDLER.component)
+            it.lore(
+                listOf(
+                    Component.text("우클릭 시 제안 창을 열 수 있습니다.", TextColor.fromHexString("#ffffff"))
+                )
             )
-            this.itemMeta = meta
         }
-        suggestionListHandler.apply {
-            val meta = this.itemMeta
-            meta.setDisplayName("${ChatColor.LIGHT_PURPLE}제안 목록")
-            meta.lore = listOf(
-                "${ChatColor.WHITE}우클릭 시 제안 목록을 알 수 있습니다."
+        suggestionListHandler.editMeta {
+            it.displayName(ItemNames.SUGGESTION_LIST_HANDLER.component)
+            it.lore(
+                listOf(
+                    Component.text("우클릭 시 제안 목록을 알 수 있습니다.", TextColor.fromHexString("#ffffff"))
+                )
             )
-            this.itemMeta = meta
         }
     }
 
@@ -59,7 +63,10 @@ class SpringPotato : JavaPlugin() {
 
                         // 스코어보드 초기화
                         val board = Bukkit.getScoreboardManager().newScoreboard
-                        val objective = board.registerNewObjective("점수", "dummy", "점수")
+                        val objective = board.registerNewObjective(
+                            "점수", "dummy",
+                            Component.text("점수", TextColor.fromHexString("#deaa50"))
+                        )
                         objective.displaySlot = DisplaySlot.SIDEBAR
                         scoreboard = board
 
@@ -90,13 +97,28 @@ class SpringPotato : JavaPlugin() {
                 executes {
                     if (isRunning) {
                         for (player in server.onlinePlayers) {
-                            if (!(suggestionHandler in player.inventory.contents)) {
+                            if (suggestionHandler !in player.inventory.contents) {
                                 player.inventory.addItem(suggestionHandler)
                             }
-                            if (!(suggestionListHandler in player.inventory.contents)) {
+                            if (suggestionListHandler !in player.inventory.contents) {
                                 player.inventory.addItem(suggestionListHandler)
                             }
                         }
+                    }
+                }
+            }
+            then("showCoordinates") {
+                then("playerNickname" to string()) {
+                    executes {
+                        val playerNickname: String by it
+                        val playerLocationString: String
+                        val targetPlayer: Player? = server.getPlayer(playerNickname)
+                        playerLocationString = targetPlayer?.location?.let { loc ->
+                            "차원: ${loc.world.name} X: ${loc.x.roundToInt()}, Y: ${loc.y.roundToInt()}, Z: ${loc.z.roundToInt()}"
+                        }
+                            ?: "해당 플레이어가 존재하지 않습니다."
+
+                        player.sendMessage(playerLocationString)
                     }
                 }
             }
