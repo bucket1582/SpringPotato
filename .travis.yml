@@ -10,9 +10,6 @@ branches:
 before_install:
   - chmod +x ./gradlew
 
-install:
-  - ./gradlew setupWorkspace
-
 cache:
   directories:
     - $HOME/.m2
