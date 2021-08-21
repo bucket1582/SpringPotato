@@ -1,26 +1,48 @@
 package com.github.bucket1572.springpotato.text_components
 
 import com.github.bucket1572.springpotato.colors.ColorTag
+import com.github.bucket1572.springpotato.colors.getTextColor
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.Style
-import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
-import net.kyori.adventure.text.format.TextDecorationAndState
 
 sealed class SpecialTextComponent(
-    val text: String, val color: ColorTag, val textDecorationWithFlag: HashMap<TextDecoration, TextDecoration.State>
+    val text: String, val color: ColorTag, val decorationStyle: Style
 ) {
     fun getComponent(): Component {
         return Component.text(text).style(getStyle())
     }
 
     private fun getStyle(): Style {
-        return Style.empty().apply {
-            textDecorationWithFlag.forEach { (decoration, decorationFlag) ->
-                decoration(decoration, decorationFlag)
-            }
-            color(TextColor.fromHexString(color.hexString))
-        }
+        return decorationStyle.color(color.getTextColor())
     }
 }
 
+data class AlertComponent(val message: String) : SpecialTextComponent(
+    text = message,
+    color = ColorTag.ALERT,
+    decorationStyle = Style.empty()
+        .decoration(TextDecoration.BOLD, TextDecoration.State.TRUE)
+)
+
+data class CommonHandlerNameComponent(val name: String) : SpecialTextComponent(
+    text = name,
+    color = ColorTag.COMMON_HANDLER_NAME,
+    decorationStyle = Style.empty()
+        .decoration(TextDecoration.BOLD, TextDecoration.State.TRUE)
+        .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)
+)
+
+data class DescriptionComponent(val description: String) : SpecialTextComponent(
+    text = description,
+    color = ColorTag.DESCRIPTION,
+    decorationStyle = Style.empty()
+        .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)
+)
+
+data class SuccessComponent(val message: String) : SpecialTextComponent(
+    text = message,
+    color = ColorTag.SUCCESS,
+    decorationStyle = Style.empty()
+        .decoration(TextDecoration.BOLD, TextDecoration.State.TRUE)
+)

@@ -1,5 +1,8 @@
 package com.github.bucket1572.springpotato
 
+import com.github.bucket1572.springpotato.difficulty_indicator.EasyIndexComponent
+import com.github.bucket1572.springpotato.difficulty_indicator.HardIndexComponent
+import com.github.bucket1572.springpotato.difficulty_indicator.IntermediateIndexComponent
 import com.github.bucket1572.springpotato.handlers.HandlerNames
 import com.github.bucket1572.springpotato.text_components.*
 import io.github.monun.tap.effect.playFirework
