@@ -2,7 +2,6 @@ package com.github.bucket1572.springpotato.common
 
 import com.github.bucket1572.springpotato.SpringPotato
 import com.github.bucket1572.springpotato.common.exceptions.DuplicatedSuggestionException
-import com.github.bucket1572.springpotato.difficulty_indicator.DifficultyIndicatorComponent
 import com.github.bucket1572.springpotato.difficulty_indicator.EasyIndexComponent
 import com.github.bucket1572.springpotato.difficulty_indicator.HardIndexComponent
 import com.github.bucket1572.springpotato.difficulty_indicator.IntermediateIndexComponent
@@ -43,7 +42,8 @@ object SuggestionHandler {
     fun newSuggestion(
         plugin: SpringPotato, suggestingItem: Material, suggestingPlayer: Player, difficultyIndex: DifficultyTag
     ) {
-        val point = difficultyIndex.getFundamentalPoint()
+        val additionalPoint = ScoreHandler.computeAdditionalScore(suggestingPlayer)
+        val point = difficultyIndex.getFundamentalPoint() + additionalPoint
         val time = difficultyIndex.getSuggestingTime()
 
         checkSuggestionUnique(suggestingItem)
@@ -97,7 +97,7 @@ object SuggestionHandler {
             // 제출한 사람들에게 추가 점수를 부여하면서, 제출한 사람 수를 셈.
             val handedOutPlayerCount: Int = plugin.server.onlinePlayers.count {
                 if (handedOutPlayer[suggestingItem]?.contains(it) == true) {
-                    ScoreHandler.updateScore(plugin, it, ScoreHandler.handOutScore)
+                    ScoreHandler.updateScore(plugin, it, ScoreHandler.HANDOUT_SCORE)
                     true
                 }
                 else false
