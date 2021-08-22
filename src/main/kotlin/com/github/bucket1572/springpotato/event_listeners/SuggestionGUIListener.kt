@@ -2,11 +2,16 @@ package com.github.bucket1572.springpotato.event_listeners
 
 import com.github.bucket1572.springpotato.SpringPotato
 import com.github.bucket1572.springpotato.common.InventoryHandler
+import com.github.bucket1572.springpotato.common.ScoreHandler
 import com.github.bucket1572.springpotato.common.SuggestionHandler
 import com.github.bucket1572.springpotato.common.WandHandler
 import com.github.bucket1572.springpotato.difficulty_indicator.tag.DifficultyTag
 import com.github.bucket1572.springpotato.difficulty_indicator.tag.getIndicator
+import com.github.bucket1572.springpotato.difficulty_indicator.tag.getMaterial
 import com.github.bucket1572.springpotato.text_components.AlertComponent
+import com.github.bucket1572.springpotato.type.ItemType
+import net.kyori.adventure.text.Component
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -15,6 +20,7 @@ import org.bukkit.event.block.Action
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.ItemStack
 
 class SuggestionGUIListener(private val plugin: SpringPotato): Listener {
     @EventHandler
@@ -27,6 +33,11 @@ class SuggestionGUIListener(private val plugin: SpringPotato): Listener {
         val action = event.action
 
         if (action == Action.RIGHT_CLICK_AIR && WandHandler.isSuggestionWand(interactionItem)) {
+            // 쿨타임이 안 끝났으면 리턴
+            if (player.hasCooldown(WandHandler.suggestionWand.material)) {
+                player.sendMessage(AlertComponent("아직 쿨타임이 끝나지 않았습니다.").getComponent())
+                return
+            }
             InventoryHandler.openSuggestionInventory(player)
         }
     }
@@ -37,27 +48,32 @@ class SuggestionGUIListener(private val plugin: SpringPotato): Listener {
         if (!plugin.isRunning) return
 
         val inventory = event.inventory
-        val item = event.currentItem
+
+        // 아무것도 안 들고 있으면 끝.
+        val item = event.currentItem ?: return
         if (InventoryHandler.isSuggestionInventory(inventory)) {
             if (InventoryHandler.isNotAvailableItem(item)) {
                 event.isCancelled = true
                 return
             }
 
-            if (item == DifficultyTag.EASY.getIndicator(0)) {
-                inventory.setItem(7, DifficultyTag.INTERMEDIATE.getIndicator(0))
+            // 플레이어의 경험치 레벨로부터 추가 점수를 계산; 플레이어가 아니면 끝.
+            val additionalPoint = ScoreHandler.computeAdditionalScore(event.viewers[0] as Player)
+
+            if (isEasyIndicator(item)) {
+                inventory.setItem(7, DifficultyTag.INTERMEDIATE.getIndicator(additionalPoint))
                 event.isCancelled = true
                 return
             }
 
-            if (item == DifficultyTag.INTERMEDIATE.getIndicator(0)) {
-                inventory.setItem(7, DifficultyTag.HARD.getIndicator(0))
+            if (isIntermediateIndicator(item)) {
+                inventory.setItem(7, DifficultyTag.HARD.getIndicator(additionalPoint))
                 event.isCancelled = true
                 return
             }
 
-            if (item == DifficultyTag.HARD.getIndicator(0)) {
-                inventory.setItem(7, DifficultyTag.EASY.getIndicator(0))
+            if (isHardIndicator(item)) {
+                inventory.setItem(7, DifficultyTag.EASY.getIndicator(additionalPoint))
                 event.isCancelled = true
                 return
             }
@@ -79,9 +95,9 @@ class SuggestionGUIListener(private val plugin: SpringPotato): Listener {
 
             // 난이도
             val difficultyIndex = when (inventory.contents[7]?.type) {
-                Material.LIME_CONCRETE -> DifficultyTag.EASY
-                Material.YELLOW_CONCRETE -> DifficultyTag.INTERMEDIATE
-                Material.RED_CONCRETE -> DifficultyTag.HARD
+                DifficultyTag.EASY.getMaterial() -> DifficultyTag.EASY
+                DifficultyTag.INTERMEDIATE.getMaterial() -> DifficultyTag.INTERMEDIATE
+                DifficultyTag.HARD.getMaterial() -> DifficultyTag.HARD
                 else -> return
             }
 
@@ -99,5 +115,23 @@ class SuggestionGUIListener(private val plugin: SpringPotato): Listener {
 
             player.setCooldown(Material.NETHER_STAR, WandHandler.SUGGESTION_WAND_COOLDOWN)
         }
+    }
+
+    private fun isEasyIndicator(item: ItemStack): Boolean {
+        return item.type == DifficultyTag.EASY.getMaterial() &&
+                item.itemMeta.lore() != null &&
+                ItemType.DIFFICULTY_INDICATOR.typeComponent.getComponent() in item.itemMeta.lore()!!
+    }
+
+    private fun isIntermediateIndicator(item: ItemStack): Boolean {
+        return item.type == DifficultyTag.INTERMEDIATE.getMaterial() &&
+                item.itemMeta.lore() != null &&
+                ItemType.DIFFICULTY_INDICATOR.typeComponent.getComponent() in item.itemMeta.lore()!!
+    }
+
+    private fun isHardIndicator(item: ItemStack): Boolean {
+        return item.type == DifficultyTag.HARD.getMaterial() &&
+                item.itemMeta.lore() != null &&
+                ItemType.DIFFICULTY_INDICATOR.typeComponent.getComponent() in item.itemMeta.lore()!!
     }
 }

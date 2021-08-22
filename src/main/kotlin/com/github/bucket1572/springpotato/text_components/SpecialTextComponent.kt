@@ -40,6 +40,13 @@ data class DescriptionComponent(val description: String) : SpecialTextComponent(
         .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)
 )
 
+data class TypeDescriptionComponent(val description: String) : SpecialTextComponent(
+    text = description,
+    color = ColorTag.TYPE_DESCRIPTION,
+    decorationStyle = Style.empty()
+        .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)
+)
+
 data class SuccessComponent(val message: String) : SpecialTextComponent(
     text = message,
     color = ColorTag.SUCCESS,

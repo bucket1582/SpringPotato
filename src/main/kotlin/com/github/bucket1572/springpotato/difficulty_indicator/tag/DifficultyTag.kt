@@ -6,6 +6,8 @@ import com.github.bucket1572.springpotato.difficulty_indicator.EasyIndexComponen
 import com.github.bucket1572.springpotato.difficulty_indicator.HardIndexComponent
 import com.github.bucket1572.springpotato.difficulty_indicator.IntermediateIndexComponent
 import com.github.bucket1572.springpotato.text_components.DescriptionComponent
+import com.github.bucket1572.springpotato.text_components.TypeDescriptionComponent
+import com.github.bucket1572.springpotato.type.ItemType
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.Style
 import net.kyori.adventure.text.format.TextDecoration
@@ -50,18 +52,21 @@ fun DifficultyTag.getSuggestingTime(): Int =
         DifficultyTag.HARD -> 10
     }
 
-fun DifficultyTag.getIndicatorItem(): ItemStack =
+fun DifficultyTag.getMaterial(): Material =
     when (this) {
-        DifficultyTag.EASY -> ItemStack(Material.LIME_CONCRETE, 1)
-        DifficultyTag.INTERMEDIATE -> ItemStack(Material.YELLOW_CONCRETE, 1)
-        DifficultyTag.HARD -> ItemStack(Material.RED_CONCRETE, 1)
+        DifficultyTag.EASY -> Material.LIME_CONCRETE
+        DifficultyTag.INTERMEDIATE -> Material.YELLOW_CONCRETE
+        DifficultyTag.HARD -> Material.RED_CONCRETE
     }
+
+fun DifficultyTag.getIndicatorItem(): ItemStack = ItemStack(this.getMaterial(), 1)
 
 fun DifficultyTag.getIndicator(additionalPoint: Int): ItemStack {
     val lore = listOf(
+        ItemType.DIFFICULTY_INDICATOR.typeComponent.getComponent(),
         DescriptionComponent("시간: ${this.getSuggestingTime()}").getComponent(),
         DescriptionComponent(
-            "점수: ${this.getFundamentalPoint()}${if (additionalPoint <= 0) "" else "(+$additionalPoint"}"
+            "점수: ${this.getFundamentalPoint()}${if (additionalPoint <= 0) "" else "(+$additionalPoint)"}"
         ).getComponent()
     )
 
