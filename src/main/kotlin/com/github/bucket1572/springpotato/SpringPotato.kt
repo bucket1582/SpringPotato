@@ -1,6 +1,9 @@
 package com.github.bucket1572.springpotato
 
-import com.github.bucket1572.springpotato.handlers.HandlerNames
+import com.github.bucket1572.springpotato.common.WandHandler
+import com.github.bucket1572.springpotato.event_listeners.SuggestionGUIListener
+import com.github.bucket1572.springpotato.event_listeners.SuggestionListGUIListener
+import com.github.bucket1572.springpotato.handlers.WandNames
 import com.github.bucket1572.springpotato.text_components.DescriptionComponent
 import io.github.monun.kommand.getValue
 import io.github.monun.kommand.kommand
@@ -17,39 +20,11 @@ import kotlin.math.roundToInt
 
 class SpringPotato : JavaPlugin() {
     var isRunning: Boolean = false
-    private var suggestionHandler: ItemStack = ItemStack(
-        Material.NETHER_STAR
-    )
-    private var suggestionListHandler: ItemStack = ItemStack(
-        Material.NETHER_STAR
-    )
     var scoreboard: Scoreboard? = null
-
-    init {
-        suggestionHandler.editMeta {
-            it.displayName(HandlerNames.SUGGESTION_HANDLER.component)
-            it.lore(
-                listOf(
-                    DescriptionComponent("우클릭 시 제안 창을 열 수 있습니다.").getComponent()
-                )
-            )
-        }
-        suggestionListHandler.editMeta {
-            it.displayName(HandlerNames.SUGGESTION_LIST_HANDLER.component)
-            it.lore(
-                listOf(
-                    DescriptionComponent("우클릭 시 제안 목록을 알 수 있습니다.").getComponent()
-                )
-            )
-        }
-    }
 
     override fun onEnable() {
         // 초기화
-        val eventListener = EventListener()
-        eventListener.plugin = this
-        this.server.pluginManager.registerEvents(eventListener, this)
-
+        EventListenerLoader.loadAllEventListeners(this)
         registerCommands()
     }
 
@@ -74,8 +49,8 @@ class SpringPotato : JavaPlugin() {
 
                         // 플레이어 초기화
                         for (player in this@SpringPotato.server.onlinePlayers) {
-                            player.inventory.addItem(suggestionHandler)
-                            player.inventory.addItem(suggestionListHandler)
+                            player.inventory.addItem(WandHandler.suggestionWand.getWandAsItemStack())
+                            player.inventory.addItem(WandHandler.suggestionListWand.getWandAsItemStack())
                             val score = objective.getScore(player.name)
                             score.score = 0
                             player.scoreboard = board
@@ -98,14 +73,8 @@ class SpringPotato : JavaPlugin() {
             then("handlers") {
                 executes {
                     if (isRunning) {
-                        for (player in server.onlinePlayers) {
-                            if (suggestionHandler !in player.inventory.contents) {
-                                player.inventory.addItem(suggestionHandler)
-                            }
-                            if (suggestionListHandler !in player.inventory.contents) {
-                                player.inventory.addItem(suggestionListHandler)
-                            }
-                        }
+                        player.inventory.addItem(WandHandler.suggestionWand.getWandAsItemStack())
+                        player.inventory.addItem(WandHandler.suggestionListWand.getWandAsItemStack())
                     }
                 }
             }
