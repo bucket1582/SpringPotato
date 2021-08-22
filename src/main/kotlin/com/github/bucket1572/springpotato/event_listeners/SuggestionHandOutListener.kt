@@ -25,30 +25,31 @@ class SuggestionHandOutListener(private val plugin: SpringPotato) : Listener {
         // 초기화
         val action = event.action
         val player = event.player
-        val itemInMain = player.inventory.itemInMainHand
+        val interactionItem = event.item ?: return
 
         // 우클릭으로 제출
-        if (action == Action.RIGHT_CLICK_AIR &&
-            itemInMain.type in SuggestionHandler.suggester.keys &&
-            event.player !in SuggestionHandler.handedOutPlayer[itemInMain.type]!! &&
-            (event.player != SuggestionHandler.suggester[itemInMain.type])
-        ) {
-            SuggestionHandler.handedOutPlayer[itemInMain.type]!!.add(event.player)
+        // 조건
+        if (action != Action.RIGHT_CLICK_AIR) return
+        if (interactionItem.type !in SuggestionHandler.suggester.keys) return
+        if (player in SuggestionHandler.handedOutPlayer[interactionItem.type]!!) return
+        if (player == SuggestionHandler.suggester[interactionItem.type]) return
 
-            // 제출 공표
-            Bukkit.broadcast(
-                SuccessComponent("${event.player.name}님이 ${itemInMain.type.name}을 제출했습니다!").getComponent()
-            )
+        SuggestionHandler.handedOutPlayer[interactionItem.type]!!.add(event.player)
 
-            // 쿨타임 초기화
-            player.setCooldown(WandHandler.suggestionWand.material, 0)
+        // 제출 공표
+        Bukkit.broadcast(
+            SuccessComponent("${event.player.name}님이 ${interactionItem.type.name}을 제출했습니다!").getComponent()
+        )
 
-            // 견제 시 레벨 지급
-            player.giveExpLevels(ScoreHandler.EXP_LEVEL_FOR_HANDOUT)
+        // 쿨타임 초기화
+        player.setCooldown(WandHandler.suggestionWand.material, 0)
 
-            // 성공 짝짝짝
-            releaseFireWork(player)
-        }
+        // 견제 시 레벨 지급
+        player.giveExpLevels(ScoreHandler.EXP_LEVEL_FOR_HANDOUT)
+
+        // 성공 짝짝짝
+        releaseFireWork(player)
+
     }
 
     private fun releaseFireWork(player: Player) {

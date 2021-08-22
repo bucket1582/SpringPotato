@@ -19,9 +19,11 @@ class SuggestionListGUIListener(private val plugin: SpringPotato): Listener {
         val interactionItem = event.item
         val action = event.action
 
-        if (action == Action.RIGHT_CLICK_AIR && WandHandler.isSuggestionListWand(interactionItem)) {
-            InventoryHandler.openSuggestionListInventory(player)
-        }
+        // 조건
+        if (action != Action.RIGHT_CLICK_AIR) return
+        if (!WandHandler.isSuggestionListWand(interactionItem)) return
+
+        InventoryHandler.openSuggestionListInventory(player)
     }
 
     @EventHandler

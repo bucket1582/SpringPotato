@@ -3,6 +3,7 @@ package com.github.bucket1572.springpotato.common
 import com.github.bucket1572.springpotato.difficulty_indicator.tag.DifficultyTag
 import com.github.bucket1572.springpotato.difficulty_indicator.tag.getIndicator
 import com.github.bucket1572.springpotato.text_components.DescriptionComponent
+import com.github.bucket1572.springpotato.type.ItemType
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -19,10 +20,11 @@ object InventoryHandler {
     )
 
     // 제안 창
-    private val suggestionInventory = Bukkit.createInventory(
+    val suggestionInventory = Bukkit.createInventory(
         null, InventoryType.DISPENSER, Component.text("제안")
     )
 
+    // 제안 목록 창
     private val suggestionListInventory = Bukkit.createInventory(
         null, COLUMNS * 3, Component.text("제안 목록")
     )
@@ -70,6 +72,7 @@ object InventoryHandler {
 
         viewer.openInventory(suggestionListInventory)
     }
+
 
     private fun fillGUIInventoryExcept(indexes: List<Int>, guiInventory: Inventory) {
         guiInventory.forEachIndexed { index, _ ->

@@ -103,12 +103,13 @@ object SuggestionHandler {
                 else false
             }
 
-            // 제출한 사람 수에 따른 점수 계산
+            // 제출한 사람 수에 따른 점수 계산; 감점일 때는 기본 점수만 고려
             if (handedOutPlayerCount == 0) {
                 ScoreHandler.updateScore(plugin, suggester[suggestingItem]!!, suggestionBetting[suggestingItem]!!)
             } else {
                 ScoreHandler.updateScore(
-                    plugin, suggester[suggestingItem]!!, -handedOutPlayerCount * suggestionBetting[suggestingItem]!!
+                    plugin, suggester[suggestingItem]!!,
+                    -handedOutPlayerCount * suggestionDifficulty[suggestingItem]!!.getFundamentalPoint()
                 )
             }
 
@@ -116,9 +117,7 @@ object SuggestionHandler {
             removeSuggestion(suggestingItem)
         }
 
-        plugin.apply {
-            Bukkit.getScheduler().runTaskLater(this, suggestionExpiration, time.toLong() * 1200)
-        }
+        Bukkit.getScheduler().runTaskLater(plugin, suggestionExpiration, time.toLong() * 1200)
     }
 
     private fun getSuggestionDescription(suggestedItem: Material): List<Component> {

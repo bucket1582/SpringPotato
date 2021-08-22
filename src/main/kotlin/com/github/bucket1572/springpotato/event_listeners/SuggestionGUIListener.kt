@@ -22,7 +22,9 @@ import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 
-class SuggestionGUIListener(private val plugin: SpringPotato): Listener {
+class SuggestionGUIListener(private val plugin: SpringPotato) : Listener {
+    private val FORCE_CLOSING = 1
+
     @EventHandler
     fun onBeginningProposal(event: PlayerInteractEvent) {
         // 플러그인이 로딩 되지 않았거나, 아직 시작하지 않았다면, 무시한다.
@@ -32,14 +34,26 @@ class SuggestionGUIListener(private val plugin: SpringPotato): Listener {
         val interactionItem = event.item
         val action = event.action
 
-        if (action == Action.RIGHT_CLICK_AIR && WandHandler.isSuggestionWand(interactionItem)) {
-            // 쿨타임이 안 끝났으면 리턴
-            if (player.hasCooldown(WandHandler.suggestionWand.material)) {
-                player.sendMessage(AlertComponent("아직 쿨타임이 끝나지 않았습니다.").getComponent())
-                return
-            }
-            InventoryHandler.openSuggestionInventory(player)
+        // 조건
+        if (action != Action.RIGHT_CLICK_AIR) return
+        if (!WandHandler.isSuggestionWand(interactionItem)) return
+        if (player.hasCooldown(WandHandler.suggestionWand.material)) {
+            player.sendMessage(AlertComponent("아직 쿨타임이 끝나지 않았습니다.").getComponent())
+            return
         }
+        if (InventoryHandler.suggestionInventory.viewers.size > 0) {
+            player.sendMessage(AlertComponent("다른 사용자가 제안 중입니다.").getComponent())
+            return
+        }
+
+        InventoryHandler.openSuggestionInventory(player)
+
+        val forceClosingProposal = Runnable {
+            InventoryHandler.suggestionInventory.close()
+        }
+
+        Bukkit.getScheduler().runTaskLater(plugin, forceClosingProposal, FORCE_CLOSING.toLong() * 1200)
+
     }
 
     @EventHandler
@@ -49,34 +63,33 @@ class SuggestionGUIListener(private val plugin: SpringPotato): Listener {
 
         val inventory = event.inventory
 
-        // 아무것도 안 들고 있으면 끝.
+        // 조건
         val item = event.currentItem ?: return
-        if (InventoryHandler.isSuggestionInventory(inventory)) {
-            if (InventoryHandler.isNotAvailableItem(item)) {
-                event.isCancelled = true
-                return
-            }
+        if (!InventoryHandler.isSuggestionInventory(inventory)) return
+        if (InventoryHandler.isNotAvailableItem(item)) {
+            event.isCancelled = true
+            return
+        }
 
-            // 플레이어의 경험치 레벨로부터 추가 점수를 계산; 플레이어가 아니면 끝.
-            val additionalPoint = ScoreHandler.computeAdditionalScore(event.viewers[0] as Player)
+        // 플레이어의 경험치 레벨로부터 추가 점수를 계산; 플레이어가 아니면 끝.
+        val additionalPoint = ScoreHandler.computeAdditionalScore(event.viewers[0] as Player)
 
-            if (isEasyIndicator(item)) {
-                inventory.setItem(7, DifficultyTag.INTERMEDIATE.getIndicator(additionalPoint))
-                event.isCancelled = true
-                return
-            }
+        if (isEasyIndicator(item)) {
+            inventory.setItem(7, DifficultyTag.INTERMEDIATE.getIndicator(additionalPoint))
+            event.isCancelled = true
+            return
+        }
 
-            if (isIntermediateIndicator(item)) {
-                inventory.setItem(7, DifficultyTag.HARD.getIndicator(additionalPoint))
-                event.isCancelled = true
-                return
-            }
+        if (isIntermediateIndicator(item)) {
+            inventory.setItem(7, DifficultyTag.HARD.getIndicator(additionalPoint))
+            event.isCancelled = true
+            return
+        }
 
-            if (isHardIndicator(item)) {
-                inventory.setItem(7, DifficultyTag.EASY.getIndicator(additionalPoint))
-                event.isCancelled = true
-                return
-            }
+        if (isHardIndicator(item)) {
+            inventory.setItem(7, DifficultyTag.EASY.getIndicator(additionalPoint))
+            event.isCancelled = true
+            return
         }
     }
 
@@ -89,32 +102,37 @@ class SuggestionGUIListener(private val plugin: SpringPotato): Listener {
         if (event.reason == InventoryCloseEvent.Reason.CANT_USE) return
 
         val inventory = event.inventory
-        if (InventoryHandler.isSuggestionInventory(inventory)) {
-            // 제안한 아이템과 난이도; 없으면 끝.
-            val item = inventory.contents[1]?.type ?: return
+        // 조건
+        if (!InventoryHandler.isSuggestionInventory(inventory)) return
 
-            // 난이도
-            val difficultyIndex = when (inventory.contents[7]?.type) {
-                DifficultyTag.EASY.getMaterial() -> DifficultyTag.EASY
-                DifficultyTag.INTERMEDIATE.getMaterial() -> DifficultyTag.INTERMEDIATE
-                DifficultyTag.HARD.getMaterial() -> DifficultyTag.HARD
-                else -> return
-            }
+        // 제안한 아이템과 난이도; 없으면 끝.
+        val item = inventory.contents[1] ?: return
 
-            // 플레이어 받아오기; 플레이어가 아닌 human entity 였다면 끝.
-            val player = try{ event.player as Player } catch (e: ClassCastException) { return }
-
-            // 네더의 별일 경우 (불가능)
-            // TODO: 2021-08-22 불가능한 대상들을 탐지하기 위한 lore 추가 및 로직 추가.
-            if (item == Material.NETHER_STAR) {
-                event.player.sendMessage(AlertComponent("네더의 별은 제안할 수 없습니다.").getComponent())
-                return
-            }
-
-            SuggestionHandler.newSuggestion(plugin, item, player, difficultyIndex)
-
-            player.setCooldown(Material.NETHER_STAR, WandHandler.SUGGESTION_WAND_COOLDOWN)
+        // 난이도
+        val difficultyIndex = when (inventory.contents[7]?.type) {
+            DifficultyTag.EASY.getMaterial() -> DifficultyTag.EASY
+            DifficultyTag.INTERMEDIATE.getMaterial() -> DifficultyTag.INTERMEDIATE
+            DifficultyTag.HARD.getMaterial() -> DifficultyTag.HARD
+            else -> return
         }
+
+        // 플레이어 받아오기; 플레이어가 아닌 human entity 였다면 끝.
+        val player = try {
+            event.player as Player
+        } catch (e: ClassCastException) {
+            return
+        }
+
+        // 네더의 별일 경우 (불가능)
+        // TODO: 2021-08-22 불가능한 대상들을 탐지하기 위한 lore 추가 및 로직 추가.
+        if (WandHandler.isWand(item)) {
+            event.player.sendMessage(AlertComponent("기본 제공 아이템은 제안할 수 없습니다.").getComponent())
+            return
+        }
+
+        SuggestionHandler.newSuggestion(plugin, item.type, player, difficultyIndex)
+
+        player.setCooldown(Material.NETHER_STAR, WandHandler.SUGGESTION_WAND_COOLDOWN)
     }
 
     private fun isEasyIndicator(item: ItemStack): Boolean {

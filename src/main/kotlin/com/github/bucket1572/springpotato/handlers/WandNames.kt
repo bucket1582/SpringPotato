@@ -9,5 +9,8 @@ enum class WandNames(val component: Component) {
     ),
     SUGGESTION_LIST_WAND(
         CommonHandlerNameComponent("제안 목록").getComponent()
+    ),
+    TRACKER_WAND(
+        CommonHandlerNameComponent("모험의 나침반").getComponent()
     )
 }
