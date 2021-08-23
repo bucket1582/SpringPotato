@@ -2,11 +2,11 @@ package com.github.bucket1572.springpotato.common
 
 import com.github.bucket1572.springpotato.difficulty_indicator.tag.DifficultyTag
 import com.github.bucket1572.springpotato.difficulty_indicator.tag.getIndicator
-import com.github.bucket1572.springpotato.text_components.DescriptionComponent
-import com.github.bucket1572.springpotato.type.ItemType
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.inventory.Inventory
@@ -29,9 +29,13 @@ object InventoryHandler {
         null, COLUMNS * 3, Component.text("제안 목록")
     )
 
+    // 도구 설정 창 (플레이어에 종속)
+    private val settingWandInventoryMap = mutableMapOf<Player, Inventory>()
+
+    // 개인 상자 창 (플레이어에 종속)
+    private val virtualChestInventoryMap = mutableMapOf<Player, Inventory>()
+
     init {
-        initSuggestionInventory()
-        initSuggestionListInventory()
         nullItem.editMeta {
             it.displayName(Component.text(" "))
         }
@@ -45,13 +49,20 @@ object InventoryHandler {
         return inventory == suggestionListInventory
     }
 
+    fun isSettingInventory(inventory: Inventory): Boolean {
+        return inventory in settingWandInventoryMap.values
+    }
+
+    fun isSettingInventoryOf(inventory: Inventory, player: Player): Boolean {
+        return inventory == settingWandInventoryMap[player]
+    }
+
     fun isNotAvailableItem(itemStack: ItemStack?): Boolean {
         return itemStack == null || itemStack == nullItem
     }
 
     fun openSuggestionInventory(viewer: Player) {
-        initSuggestionInventory()
-
+        initSuggestionInventory(viewer)
         viewer.openInventory(suggestionInventory)
     }
 
@@ -73,6 +84,20 @@ object InventoryHandler {
         viewer.openInventory(suggestionListInventory)
     }
 
+    fun openSettingWandInventory(viewer: Player) {
+        initSettingWandInventory(viewer)
+        viewer.openInventory(settingWandInventoryMap[viewer]!!)
+    }
+
+    fun openVirtualChest(viewer: Player) {
+        if (!WandHandler.isWandPlayerChoice(WandHandler.virtualChest, viewer)) return
+
+        if (virtualChestInventoryMap[viewer] == null) {
+            initVirtualChest(viewer)
+        }
+
+        viewer.openInventory(virtualChestInventoryMap[viewer]!!)
+    }
 
     private fun fillGUIInventoryExcept(indexes: List<Int>, guiInventory: Inventory) {
         guiInventory.forEachIndexed { index, _ ->
@@ -81,14 +106,45 @@ object InventoryHandler {
         }
     }
 
-    private fun initSuggestionInventory() {
+    private fun initSuggestionInventory(viewer: Player) {
         fillGUIInventoryExcept(listOf(1, 7), suggestionInventory)
 
-        val difficultyIndicator = DifficultyTag.EASY.getIndicator(0)
+        val difficultyIndicator =
+            DifficultyTag.EASY.getIndicator(ScoreHandler.computeAdditionalScore(viewer))
         suggestionInventory.setItem(7, difficultyIndicator)
     }
 
     private fun initSuggestionListInventory() {
         fillGUIInventoryExcept((10..16).toList(), suggestionListInventory)
+    }
+
+    fun initSettingWandInventory(player: Player) {
+        if (settingWandInventoryMap[player] == null) {
+            val inventory = Bukkit.createInventory(
+                null, COLUMNS * 3, Component.text("도구 설정")
+            )
+            settingWandInventoryMap[player] = inventory
+            initSettingWandInventory(player)
+            return
+        }
+
+        val validIndex = ((10..13) + (15..16)).toList()
+        fillGUIInventoryExcept(validIndex, settingWandInventoryMap[player]!!)
+        WandHandler.helperToolList.forEachIndexed { index, it ->
+            val item = it.getWandAsItemStackWithoutEnchant()
+            if (WandHandler.isWandPlayerChoice(it, player)) {
+                item.addUnsafeEnchantment(
+                    Enchantment.LOYALTY, 1
+                )
+            }
+            settingWandInventoryMap[player]!!.setItem(validIndex[index], item)
+        }
+    }
+
+    private fun initVirtualChest(player: Player) {
+        val inventory = Bukkit.createInventory(
+            null, COLUMNS, Component.text("개인 보관함")
+        )
+        virtualChestInventoryMap[player] = inventory
     }
 }

@@ -92,12 +92,14 @@ object SuggestionHandler {
     private fun startSuggestionCountdown(plugin: SpringPotato, suggestingItem: Material, time: Int) {
         // 제안 만료
         val suggestionExpiration = Runnable {
+            if (!GameHandler.isHandOutPhase()) return@Runnable
+
             Bukkit.broadcast(AlertComponent("$suggestingItem 제출 기한 만료!").getComponent())
 
             // 제출한 사람들에게 추가 점수를 부여하면서, 제출한 사람 수를 셈.
             val handedOutPlayerCount: Int = plugin.server.onlinePlayers.count {
                 if (handedOutPlayer[suggestingItem]?.contains(it) == true) {
-                    ScoreHandler.updateScore(plugin, it, ScoreHandler.HANDOUT_SCORE)
+                    ScoreHandler.updateScore(it, ScoreHandler.HANDOUT_SCORE)
                     true
                 }
                 else false
@@ -105,11 +107,10 @@ object SuggestionHandler {
 
             // 제출한 사람 수에 따른 점수 계산; 감점일 때는 기본 점수만 고려
             if (handedOutPlayerCount == 0) {
-                ScoreHandler.updateScore(plugin, suggester[suggestingItem]!!, suggestionBetting[suggestingItem]!!)
+                ScoreHandler.updateScore(suggester[suggestingItem]!!, suggestionBetting[suggestingItem]!!)
             } else {
                 ScoreHandler.updateScore(
-                    plugin, suggester[suggestingItem]!!,
-                    -handedOutPlayerCount * suggestionDifficulty[suggestingItem]!!.getFundamentalPoint()
+                    suggester[suggestingItem]!!, -handedOutPlayerCount * suggestionDifficulty[suggestingItem]!!.getFundamentalPoint()
                 )
             }
 

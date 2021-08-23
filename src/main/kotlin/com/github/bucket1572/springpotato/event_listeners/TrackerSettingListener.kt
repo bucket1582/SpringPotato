@@ -1,6 +1,7 @@
 package com.github.bucket1572.springpotato.event_listeners
 
 import com.github.bucket1572.springpotato.SpringPotato
+import com.github.bucket1572.springpotato.common.GameHandler
 import com.github.bucket1572.springpotato.common.WandHandler
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
@@ -11,8 +12,8 @@ import org.bukkit.event.player.PlayerInteractEvent
 class TrackerSettingListener(val plugin: SpringPotato): Listener {
     @EventHandler
     fun onSettingTracker(event: PlayerInteractEvent) {
-        // 플러그인이 로딩 되지 않았거나, 아직 시작하지 않았다면, 무시한다.
-        if (!plugin.isRunning) return
+        // 게임이 제출 페이즈가 아니면 무시한다.
+        if (!GameHandler.isHandOutPhase()) return
 
         val player = event.player
         val action = event.action
@@ -21,11 +22,12 @@ class TrackerSettingListener(val plugin: SpringPotato): Listener {
         // 조건
         if (action != Action.RIGHT_CLICK_AIR) return
         if (!WandHandler.isTrackerWand(interactionItem)) return
-        if (player.hasCooldown(WandHandler.trackWand.material)) return
+        if (WandHandler.isWandCooldown(player, WandHandler.trackWand)) return
+        if (plugin.server.onlinePlayers.size <= 1) return
 
         val randomPlayerExceptUser = plugin.server.onlinePlayers.filter { it != player }.random()
 
-        player.setCooldown(WandHandler.trackWand.material, WandHandler.TRACKER_WAND_COOLDOWN)
+        WandHandler.cooldownWand(player, WandHandler.trackWand)
 
         val trackTarget = Runnable {
             player.compassTarget = randomPlayerExceptUser.location

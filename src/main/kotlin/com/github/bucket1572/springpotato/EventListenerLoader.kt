@@ -10,5 +10,8 @@ object EventListenerLoader {
         manager.registerEvents(SuggestionHandOutListener(plugin), plugin)
         manager.registerEvents(PlayerDeathListener(plugin), plugin)
         manager.registerEvents(TrackerSettingListener(plugin), plugin)
+        manager.registerEvents(WandSettingListener(plugin), plugin)
+        manager.registerEvents(LimitationListener(plugin), plugin)
+        manager.registerEvents(VirtualWandListener(plugin), plugin)
     }
 }

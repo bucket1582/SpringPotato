@@ -7,10 +7,12 @@ enum class ColorTag(val red: Int, val green: Int, val blue: Int) {
     COMMON_HANDLER_NAME(168, 43,217),
     ALERT(255,0,0),
     EASY(0,255,0),
-    INTERMEDIATE(232,172,53),
+    INTERMEDIATE(255,215,0),
     HARD(255,0,0),
     SUCCESS(0,255,0),
-    TYPE_DESCRIPTION(81, 89, 232)
+    TYPE_DESCRIPTION(81, 89, 232),
+    LIMITATION_DESCRIPTION(255, 0, 0),
+    SCOREBOARD(255, 215, 0)
 }
 
 fun ColorTag.getTextColor(): TextColor = TextColor.color(red, green, blue)

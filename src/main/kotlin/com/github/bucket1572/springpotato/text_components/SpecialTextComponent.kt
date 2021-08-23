@@ -47,6 +47,13 @@ data class TypeDescriptionComponent(val description: String) : SpecialTextCompon
         .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)
 )
 
+data class LimitationDescriptionComponent(val description: String) : SpecialTextComponent(
+    text = description,
+    color = ColorTag.LIMITATION_DESCRIPTION,
+    decorationStyle = Style.empty()
+        .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)
+)
+
 data class SuccessComponent(val message: String) : SpecialTextComponent(
     text = message,
     color = ColorTag.SUCCESS,

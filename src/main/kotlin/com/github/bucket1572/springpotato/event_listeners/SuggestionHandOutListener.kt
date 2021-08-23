@@ -1,6 +1,7 @@
 package com.github.bucket1572.springpotato.event_listeners
 
 import com.github.bucket1572.springpotato.SpringPotato
+import com.github.bucket1572.springpotato.common.GameHandler
 import com.github.bucket1572.springpotato.common.ScoreHandler
 import com.github.bucket1572.springpotato.common.SuggestionHandler
 import com.github.bucket1572.springpotato.common.WandHandler
@@ -19,8 +20,8 @@ import org.bukkit.event.player.PlayerInteractEvent
 class SuggestionHandOutListener(private val plugin: SpringPotato) : Listener {
     @EventHandler
     fun onHandoutResult(event: PlayerInteractEvent) {
-        // 게임 시작 전에는 이벤트를 적용하지 않음.
-        if (!plugin.isRunning) return
+        // 게임이 제출 페이즈가 아니면 무시한다.
+        if (!GameHandler.isHandOutPhase()) return
 
         // 초기화
         val action = event.action
@@ -42,7 +43,7 @@ class SuggestionHandOutListener(private val plugin: SpringPotato) : Listener {
         )
 
         // 쿨타임 초기화
-        player.setCooldown(WandHandler.suggestionWand.material, 0)
+        WandHandler.removeCooldown(player, WandHandler.suggestionWand)
 
         // 견제 시 레벨 지급
         player.giveExpLevels(ScoreHandler.EXP_LEVEL_FOR_HANDOUT)

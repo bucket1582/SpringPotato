@@ -1,18 +1,13 @@
 package com.github.bucket1572.springpotato.event_listeners
 
 import com.github.bucket1572.springpotato.SpringPotato
-import com.github.bucket1572.springpotato.common.InventoryHandler
-import com.github.bucket1572.springpotato.common.ScoreHandler
-import com.github.bucket1572.springpotato.common.SuggestionHandler
-import com.github.bucket1572.springpotato.common.WandHandler
+import com.github.bucket1572.springpotato.common.*
 import com.github.bucket1572.springpotato.difficulty_indicator.tag.DifficultyTag
 import com.github.bucket1572.springpotato.difficulty_indicator.tag.getIndicator
 import com.github.bucket1572.springpotato.difficulty_indicator.tag.getMaterial
 import com.github.bucket1572.springpotato.text_components.AlertComponent
 import com.github.bucket1572.springpotato.type.ItemType
-import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
-import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -27,8 +22,8 @@ class SuggestionGUIListener(private val plugin: SpringPotato) : Listener {
 
     @EventHandler
     fun onBeginningProposal(event: PlayerInteractEvent) {
-        // 플러그인이 로딩 되지 않았거나, 아직 시작하지 않았다면, 무시한다.
-        if (!plugin.isRunning) return
+        // 게임이 제안 페이즈가 아니면 무시한다.
+        if (!GameHandler.isSuggestionPhase()) return
 
         val player = event.player
         val interactionItem = event.item
@@ -37,7 +32,7 @@ class SuggestionGUIListener(private val plugin: SpringPotato) : Listener {
         // 조건
         if (action != Action.RIGHT_CLICK_AIR) return
         if (!WandHandler.isSuggestionWand(interactionItem)) return
-        if (player.hasCooldown(WandHandler.suggestionWand.material)) {
+        if (WandHandler.isWandCooldown(player, WandHandler.suggestionWand)) {
             player.sendMessage(AlertComponent("아직 쿨타임이 끝나지 않았습니다.").getComponent())
             return
         }
@@ -59,7 +54,7 @@ class SuggestionGUIListener(private val plugin: SpringPotato) : Listener {
     @EventHandler
     fun onPropose(event: InventoryClickEvent) {
         // 플러그인이 로딩 되지 않았거나, 아직 시작하지 않았다면, 무시한다.
-        if (!plugin.isRunning) return
+        if (!GameHandler.isRunning()) return
 
         val inventory = event.inventory
 
@@ -96,14 +91,23 @@ class SuggestionGUIListener(private val plugin: SpringPotato) : Listener {
     @EventHandler
     fun onEndingProposal(event: InventoryCloseEvent) {
         // 플러그인이 로딩 되지 않았거나, 아직 시작하지 않았다면, 무시한다.
-        if (!plugin.isRunning) return
+        if (!GameHandler.isRunning()) return
 
         // Cant use 로 닫힐 경우, 이벤트를 적용하지 않음.
         if (event.reason == InventoryCloseEvent.Reason.CANT_USE) return
 
         val inventory = event.inventory
+
         // 조건
         if (!InventoryHandler.isSuggestionInventory(inventory)) return
+
+        // 게임이 제안 페이즈가 아니면 제안을 받아들이지 않는다.
+        if (!GameHandler.isSuggestionPhase()) {
+            inventory.viewers.forEach {
+                it.sendActionBar(AlertComponent("제안 시간이 끝났습니다. 제안은 받아들여지지 않습니다.").getComponent())
+            }
+            return
+        }
 
         // 제안한 아이템과 난이도; 없으면 끝.
         val item = inventory.contents[1] ?: return
@@ -124,15 +128,14 @@ class SuggestionGUIListener(private val plugin: SpringPotato) : Listener {
         }
 
         // 네더의 별일 경우 (불가능)
-        // TODO: 2021-08-22 불가능한 대상들을 탐지하기 위한 lore 추가 및 로직 추가.
         if (WandHandler.isWand(item)) {
-            event.player.sendMessage(AlertComponent("기본 제공 아이템은 제안할 수 없습니다.").getComponent())
+            event.player.sendMessage(AlertComponent("도우미 도구들은 제안할 수 없습니다.").getComponent())
             return
         }
 
         SuggestionHandler.newSuggestion(plugin, item.type, player, difficultyIndex)
 
-        player.setCooldown(Material.NETHER_STAR, WandHandler.SUGGESTION_WAND_COOLDOWN)
+        WandHandler.cooldownWand(player, WandHandler.suggestionWand)
     }
 
     private fun isEasyIndicator(item: ItemStack): Boolean {
