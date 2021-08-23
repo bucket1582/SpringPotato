@@ -19,10 +19,11 @@ class PlayerDeathListener(val plugin: SpringPotato) : Listener {
         if (!GameHandler.isHandOutPhase()) return
 
         val killed = event.entity
-        val killer = killed.killer ?: return
 
-        // 죽으면 1 레벨을 잃음.
+        // 죽으면 레벨을 잃음.
         killed.giveExpLevels(-expLvTransfer)
+
+        val killer = killed.killer ?: return
 
         killed.inventory.forEach {
             if (!WandHandler.isWand(it) && it != null) {
