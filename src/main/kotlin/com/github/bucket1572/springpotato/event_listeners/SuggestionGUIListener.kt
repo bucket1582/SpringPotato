@@ -33,11 +33,11 @@ class SuggestionGUIListener(private val plugin: SpringPotato) : Listener {
         if (action != Action.RIGHT_CLICK_AIR) return
         if (!WandHandler.isSuggestionWand(interactionItem)) return
         if (WandHandler.isWandCooldown(player, WandHandler.suggestionWand)) {
-            player.sendMessage(AlertComponent("아직 쿨타임이 끝나지 않았습니다.").getComponent())
+            player.sendActionBar(AlertComponent("아직 쿨타임이 끝나지 않았습니다.").getComponent())
             return
         }
         if (InventoryHandler.suggestionInventory.viewers.size > 0) {
-            player.sendMessage(AlertComponent("다른 사용자가 제안 중입니다.").getComponent())
+            player.sendActionBar(AlertComponent("다른 사용자가 제안 중입니다.").getComponent())
             return
         }
 
