@@ -6,6 +6,7 @@ import com.github.bucket1572.springpotato.common.WandHandler
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.PlayerRespawnEvent
 import kotlin.random.Random
 
 class PlayerDeathListener(val plugin: SpringPotato) : Listener {
@@ -37,8 +38,8 @@ class PlayerDeathListener(val plugin: SpringPotato) : Listener {
             }
         }
 
-        val worldBorder = killed.world.worldBorder
-        killed.bedSpawnLocation = worldBorder.center
+        // 리스폰 킬 방지
+        killed.bedSpawnLocation = null
 
         WandHandler.removeCooldown(killer, WandHandler.trackWand)
         killer.giveExpLevels(expLvTransfer)

@@ -35,7 +35,7 @@ object GameHandler {
         )
     }
 
-    fun changeToBuzzerBeaterPhase(
+    private fun changeToBuzzerBeaterPhase(
         plugin: SpringPotato, server: Server, buzzerBeaterTime: Int, lastHandoutTime: Int
     ) {
         gamePhase = GamePhase.BUZZER_BEATER
@@ -47,7 +47,7 @@ object GameHandler {
         )
     }
 
-    fun changeToLastHandOutPhase(plugin: SpringPotato, server: Server, lastHandoutTime: Int) {
+    private fun changeToLastHandOutPhase(plugin: SpringPotato, server: Server, lastHandoutTime: Int) {
         gamePhase = GamePhase.LAST_HANDOUT
         announceGameLastHandout(server)
         Bukkit.getScheduler().runTaskLater(

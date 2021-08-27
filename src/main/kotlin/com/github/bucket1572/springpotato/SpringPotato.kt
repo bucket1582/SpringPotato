@@ -4,6 +4,7 @@ import com.github.bucket1572.springpotato.common.GameHandler
 import com.github.bucket1572.springpotato.common.WandHandler
 import io.github.monun.kommand.getValue
 import io.github.monun.kommand.kommand
+import org.bukkit.GameRule
 import org.bukkit.plugin.java.JavaPlugin
 
 class SpringPotato : JavaPlugin() {
@@ -45,6 +46,8 @@ class SpringPotato : JavaPlugin() {
 
                                     this.player.world.worldBorder.center = this.player.location
                                     this.player.world.worldBorder.size = playRadius.toDouble()
+                                    this.player.world.spawnLocation = this.player.location
+                                    this.player.world.setGameRule(GameRule.SPAWN_RADIUS, playRadius / 2)
                                 }
                             }
                         }
