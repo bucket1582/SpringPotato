@@ -34,6 +34,8 @@ class SuggestionHandOutListener(private val plugin: SpringPotato) : Listener {
         if (interactionItem.type !in SuggestionHandler.suggester.keys) return
         if (player in SuggestionHandler.handedOutPlayer[interactionItem.type]!!) return
         if (player == SuggestionHandler.suggester[interactionItem.type]) return
+        // 만약 그것이 기본 지급 완드여도 안 됨.
+        if (WandHandler.isWand(interactionItem)) return
 
         SuggestionHandler.handedOutPlayer[interactionItem.type]!!.add(event.player)
 
