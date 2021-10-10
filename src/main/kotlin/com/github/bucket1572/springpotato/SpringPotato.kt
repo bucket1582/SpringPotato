@@ -1,7 +1,7 @@
 package com.github.bucket1572.springpotato
 
-import com.github.bucket1572.springpotato.common.GameHandler
-import com.github.bucket1572.springpotato.common.WandHandler
+import com.github.bucket1572.springpotato.basic_logic.handlers.GameHandler
+import com.github.bucket1572.springpotato.wand.handlers.WandHandler
 import io.github.monun.kommand.getValue
 import io.github.monun.kommand.kommand
 import org.bukkit.GameRule
@@ -48,6 +48,11 @@ class SpringPotato : JavaPlugin() {
                                     this.player.world.worldBorder.size = playRadius.toDouble()
                                     this.player.world.spawnLocation = this.player.location
                                     this.player.world.setGameRule(GameRule.SPAWN_RADIUS, playRadius / 2)
+
+                                    this@SpringPotato.server.worlds.forEach {
+                                        it.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false)
+                                        it.setGameRule(GameRule.KEEP_INVENTORY, true)
+                                    }
                                 }
                             }
                         }
