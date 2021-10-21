@@ -6,12 +6,16 @@ import com.github.bucket1572.springpotato.common.text_components.AlertComponent
 import com.github.bucket1572.springpotato.common.text_components.DescriptionComponent
 import com.github.bucket1572.springpotato.common.text_components.SuccessComponent
 import com.github.bucket1572.springpotato.basic_logic.types.GamePhase
+import com.github.bucket1572.springpotato.common.Timer
+import com.github.bucket1572.springpotato.common.colors.ColorTag
+import com.github.bucket1572.springpotato.common.text_components.PhaseIndicatorComponent
+import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.title.Title
-import org.bukkit.Bukkit
-import org.bukkit.Server
+import org.bukkit.*
 
 object GameHandler {
     private var gamePhase = GamePhase.NONE
+    private var timer: Timer? = null
 
     fun changeToSettingPhase(server: Server) {
         gamePhase = GamePhase.SETTING
@@ -21,45 +25,55 @@ object GameHandler {
     }
 
     fun changeToMainPhase(
-        plugin: SpringPotato, server: Server, mainGameTime: Int, buzzerBeaterTime: Int, lastHandoutTime: Int)
+        plugin: SpringPotato, server: Server, location: Location, playRadius: Int,
+        mainGameTime: Int, buzzerBeaterTime: Int, lastHandoutTime: Int)
     {
         gamePhase = GamePhase.MAIN
+
         clearInventory(server)
         WandHandler.initMainPhaseWand()
         dispenseWand(server)
+
         initScore(server)
+
         announceGameStart(server, mainGameTime)
-        Bukkit.getScheduler().runTaskLater(
-            plugin,
-            { -> changeToBuzzerBeaterPhase(plugin, server, buzzerBeaterTime, lastHandoutTime) },
-            mainGameTime * 1200L
-        )
+
+        setWorldBorder(location, playRadius)
+        setSpawn(location, playRadius / 2)
+        generalGameRule(server)
+
+        setAndRunTimer(
+            plugin, server, PhaseIndicatorComponent("Main"), BossBar.Color.GREEN, mainGameTime * 1200f, 1.0f
+        ) { changeToBuzzerBeaterPhase(plugin, server, buzzerBeaterTime, lastHandoutTime) }
+
     }
 
     private fun changeToBuzzerBeaterPhase(
         plugin: SpringPotato, server: Server, buzzerBeaterTime: Int, lastHandoutTime: Int
     ) {
         gamePhase = GamePhase.BUZZER_BEATER
+
         announceGameBuzzerBeater(server)
-        Bukkit.getScheduler().runTaskLater(
-            plugin,
-            { -> changeToLastHandOutPhase(plugin, server, lastHandoutTime) },
-            buzzerBeaterTime * 1200L
-        )
+
+        setAndRunTimer(
+            plugin, server, PhaseIndicatorComponent("BuzzerBeater"), BossBar.Color.YELLOW, buzzerBeaterTime * 1200f, 1.0f
+        ) { changeToLastHandOutPhase(plugin, server, lastHandoutTime) }
     }
 
     private fun changeToLastHandOutPhase(plugin: SpringPotato, server: Server, lastHandoutTime: Int) {
         gamePhase = GamePhase.LAST_HANDOUT
         announceGameLastHandout(server)
-        Bukkit.getScheduler().runTaskLater(
-            plugin, { -> endGame(server) }, lastHandoutTime * 1200L
-        )
+
+        setAndRunTimer(
+            plugin, server, PhaseIndicatorComponent("HandOut"), BossBar.Color.RED, lastHandoutTime * 1200f, 1.0f
+        ) { endGame(server) }
     }
 
     fun endGame(server: Server) {
         gamePhase = GamePhase.END
         announceGameEnd(server)
         gamePhase = GamePhase.NONE
+        timer = null
     }
 
     fun isRunning(): Boolean {
@@ -147,5 +161,31 @@ object GameHandler {
         server.onlinePlayers.forEach {
             it.inventory.clear()
         }
+    }
+
+    private fun setWorldBorder(location: Location, size: Int) {
+        val worldBorder = location.world.worldBorder
+        worldBorder.center = location.toCenterLocation()
+        worldBorder.size = size.toDouble()
+    }
+
+    private fun setSpawn(location: Location, spawnRadius: Int) {
+        location.world.spawnLocation = location
+        location.world.setGameRule(GameRule.SPAWN_RADIUS, spawnRadius)
+    }
+
+    private fun generalGameRule(server: Server) {
+        server.worlds.forEach {
+            it.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false)
+            it.setGameRule(GameRule.KEEP_INVENTORY, true)
+        }
+    }
+
+    private fun setAndRunTimer(
+        plugin: SpringPotato, server: Server, name: PhaseIndicatorComponent, color: BossBar.Color,
+        maxValue: Float, delta: Float, runnable: Runnable
+    ) {
+        timer = Timer(plugin, server, name.getComponent(), color, maxValue, delta, runnable)
+        timer!!.runTimer()
     }
 }

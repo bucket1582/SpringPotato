@@ -40,19 +40,9 @@ class SpringPotato : JavaPlugin() {
                                     val lastHandoutTime: Int by it
                                     val playRadius: Int by it
                                     GameHandler.changeToMainPhase(
-                                        this@SpringPotato, server,
+                                        this@SpringPotato, server, this.player.location, playRadius,
                                         mainGameTime, buzzerBeaterTime, lastHandoutTime
                                     )
-
-                                    this.player.world.worldBorder.center = this.player.location
-                                    this.player.world.worldBorder.size = playRadius.toDouble()
-                                    this.player.world.spawnLocation = this.player.location
-                                    this.player.world.setGameRule(GameRule.SPAWN_RADIUS, playRadius / 2)
-
-                                    this@SpringPotato.server.worlds.forEach {
-                                        it.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false)
-                                        it.setGameRule(GameRule.KEEP_INVENTORY, true)
-                                    }
                                 }
                             }
                         }
