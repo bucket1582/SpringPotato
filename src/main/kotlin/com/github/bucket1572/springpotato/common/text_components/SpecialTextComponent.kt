@@ -60,3 +60,9 @@ data class SuccessComponent(val message: String) : SpecialTextComponent(
     decorationStyle = Style.empty()
         .decoration(TextDecoration.BOLD, TextDecoration.State.TRUE)
 )
+
+data class PhaseIndicatorComponent(val message: String) : SpecialTextComponent(
+    text = message,
+    color = ColorTag.PHASE,
+    decorationStyle = Style.empty()
+)
