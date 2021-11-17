@@ -6,11 +6,8 @@ import com.github.bucket1572.springpotato.suggestion.exceptions.DuplicatedSugges
 import com.github.bucket1572.springpotato.common.difficulty_indicator.EasyIndexComponent
 import com.github.bucket1572.springpotato.common.difficulty_indicator.HardIndexComponent
 import com.github.bucket1572.springpotato.common.difficulty_indicator.IntermediateIndexComponent
-import com.github.bucket1572.springpotato.common.difficulty_indicator.tag.DifficultyTag
-import com.github.bucket1572.springpotato.common.difficulty_indicator.tag.getComponent
-import com.github.bucket1572.springpotato.common.difficulty_indicator.tag.getFundamentalPoint
-import com.github.bucket1572.springpotato.common.difficulty_indicator.tag.getSuggestingTime
 import com.github.bucket1572.springpotato.basic_logic.handlers.GameHandler
+import com.github.bucket1572.springpotato.common.difficulty_indicator.tag.*
 import com.github.bucket1572.springpotato.common.text_components.AlertComponent
 import com.github.bucket1572.springpotato.common.text_components.DescriptionComponent
 import net.kyori.adventure.text.Component
@@ -38,6 +35,9 @@ object SuggestionHandler {
     // 제안한 물품 - 제안한 점수
     val suggestionBetting: MutableMap<Material, Int> = mutableMapOf()
 
+    // 제안한 물품 - 제안시 주어진 시간
+    val suggestionBettingTime: MutableMap<Material, Int> = mutableMapOf()
+
     // 제안한 물품 - 제안한 시각
     val suggestionTime: MutableMap<Material, LocalTime> = mutableMapOf()
 
@@ -46,7 +46,8 @@ object SuggestionHandler {
     ) {
         val additionalPoint = ScoreHandler.computeAdditionalScore(suggestingPlayer)
         val point = difficultyIndex.getFundamentalPoint() + additionalPoint
-        val time = difficultyIndex.getSuggestingTime()
+        val time = GameHandler.getProgressRatio()?.let { difficultyIndex.getSuggestingTime(GameHandler.getPhase(), it) }
+            ?: difficultyIndex.getOriginalSuggestingTime()
 
         checkSuggestionUnique(suggestingItem)
 
@@ -55,6 +56,7 @@ object SuggestionHandler {
         handedOutPlayer[suggestingItem] = arrayListOf()
         suggestionDifficulty[suggestingItem] = difficultyIndex
         suggestionBetting[suggestingItem] = point
+        suggestionBettingTime[suggestingItem] = time
         suggestionTime[suggestingItem] = now()
 
         startSuggestionCountdown(plugin, suggestingItem, time)
@@ -83,6 +85,7 @@ object SuggestionHandler {
         handedOutPlayer.remove(suggestingItem)
         suggestionDifficulty.remove(suggestingItem)
         suggestionBetting.remove(suggestingItem)
+        suggestionBettingTime.remove(suggestingItem)
         suggestionTime.remove(suggestingItem)
     }
 
@@ -149,8 +152,7 @@ object SuggestionHandler {
         val stdTime = suggestionTime[suggestingItem]!!
         val currentTime = now()
 
-        val difficultyIndex = suggestionDifficulty[suggestingItem]!!
-        val totalTimeInSeconds = difficultyIndex.getSuggestingTime() * 60
+        val totalTimeInSeconds = suggestionBettingTime[suggestingItem]!! * 60
 
         return totalTimeInSeconds - stdTime.until(currentTime, ChronoUnit.SECONDS)
     }
@@ -159,7 +161,7 @@ object SuggestionHandler {
         val name = suggestingItem.name
         val title = Title.title(
             difficultyIndex.getComponent("느 집엔 이거 없지?"),
-            DescriptionComponent("$name 제출: 시간 제한 ${difficultyIndex.getSuggestingTime()}분").getComponent(),
+            DescriptionComponent("$name 제출: 시간 제한 ${suggestionBettingTime[suggestingItem]!!}분").getComponent(),
             Title.Times.of(
                 Ticks.duration(5),
                 Ticks.duration(40),
