@@ -7,18 +7,19 @@ import com.github.bucket1572.springpotato.common.text_components.DescriptionComp
 import com.github.bucket1572.springpotato.common.text_components.SuccessComponent
 import com.github.bucket1572.springpotato.basic_logic.types.GamePhase
 import com.github.bucket1572.springpotato.common.Timer
-import com.github.bucket1572.springpotato.common.colors.ColorTag
 import com.github.bucket1572.springpotato.common.text_components.PhaseIndicatorComponent
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.title.Title
 import org.bukkit.*
 
 object GameHandler {
+    const val SPAWN_RADIUS = 160
     private var gamePhase = GamePhase.NONE
     private var timer: Timer? = null
 
     fun changeToSettingPhase(server: Server) {
         gamePhase = GamePhase.SETTING
+        clearInventory(server)
         WandHandler.initSettingPhaseWand()
         clearWand(server)
         dispenseWand(server)
@@ -39,7 +40,7 @@ object GameHandler {
         announceGameStart(server, mainGameTime)
 
         setWorldBorder(location, playRadius)
-        setSpawn(location, playRadius / 2)
+        setSpawn(location, SPAWN_RADIUS)
         generalGameRule(server)
 
         setAndRunTimer(
@@ -103,6 +104,10 @@ object GameHandler {
     fun isSuggestionPhase(): Boolean {
         return isMainPhase() || isBuzzerBeaterPhase()
     }
+
+    fun getPhase(): GamePhase = gamePhase
+
+    fun getProgressRatio(): Float? = timer?.getProgressRatio()
 
     private fun announceGameStart(server: Server, playTime: Int) {
         server.showTitle(
@@ -185,7 +190,12 @@ object GameHandler {
         plugin: SpringPotato, server: Server, name: PhaseIndicatorComponent, color: BossBar.Color,
         maxValue: Float, delta: Float, runnable: Runnable
     ) {
-        timer = Timer(plugin, server, name.getComponent(), color, maxValue, delta, runnable)
-        timer!!.runTimer()
+        timer?.deleteTimer()
+        if (maxValue > 0) {
+            timer = Timer(plugin, server, name.getComponent(), color, maxValue, delta, runnable)
+            timer!!.runTimer()
+        } else {
+            runnable.run()
+        }
     }
 }
