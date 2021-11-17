@@ -74,19 +74,37 @@ class SuggestionGUIListener(private val plugin: SpringPotato) : Listener {
         val additionalPoint = ScoreHandler.computeAdditionalScore(event.viewers[0] as Player)
 
         if (isEasyIndicator(item)) {
-            inventory.setItem(7, DifficultyTag.INTERMEDIATE.getIndicator(additionalPoint))
+            inventory.setItem(7,
+                DifficultyTag.INTERMEDIATE.getIndicator(
+                    additionalPoint,
+                    GameHandler.getPhase(),
+                    GameHandler.getProgressRatio()!!
+                )
+            )
             event.isCancelled = true
             return
         }
 
         if (isIntermediateIndicator(item)) {
-            inventory.setItem(7, DifficultyTag.HARD.getIndicator(additionalPoint))
+            inventory.setItem(7,
+                DifficultyTag.HARD.getIndicator(
+                    additionalPoint,
+                    GameHandler.getPhase(),
+                    GameHandler.getProgressRatio()!!
+                )
+            )
             event.isCancelled = true
             return
         }
 
         if (isHardIndicator(item)) {
-            inventory.setItem(7, DifficultyTag.EASY.getIndicator(additionalPoint))
+            inventory.setItem(7,
+                DifficultyTag.EASY.getIndicator(
+                    additionalPoint,
+                    GameHandler.getPhase(),
+                    GameHandler.getProgressRatio()!!
+                )
+            )
             event.isCancelled = true
             return
         }

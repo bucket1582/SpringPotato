@@ -1,5 +1,6 @@
 package com.github.bucket1572.springpotato.inventory.handlers
 
+import com.github.bucket1572.springpotato.basic_logic.handlers.GameHandler
 import com.github.bucket1572.springpotato.basic_logic.handlers.ScoreHandler
 import com.github.bucket1572.springpotato.suggestion.handlers.SuggestionHandler
 import com.github.bucket1572.springpotato.wand.handlers.WandHandler
@@ -112,7 +113,11 @@ object InventoryHandler {
         fillGUIInventoryExcept(listOf(1, 7), suggestionInventory)
 
         val difficultyIndicator =
-            DifficultyTag.EASY.getIndicator(ScoreHandler.computeAdditionalScore(viewer))
+            DifficultyTag.EASY.getIndicator(
+                ScoreHandler.computeAdditionalScore(viewer),
+                GameHandler.getPhase(),
+                GameHandler.getProgressRatio()!!
+            )
         suggestionInventory.setItem(7, difficultyIndicator)
     }
 

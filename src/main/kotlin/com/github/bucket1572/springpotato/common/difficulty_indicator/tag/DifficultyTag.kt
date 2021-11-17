@@ -1,5 +1,6 @@
 package com.github.bucket1572.springpotato.common.difficulty_indicator.tag
 
+import com.github.bucket1572.springpotato.basic_logic.types.GamePhase
 import com.github.bucket1572.springpotato.common.colors.ColorTag
 import com.github.bucket1572.springpotato.common.colors.getTextColor
 import com.github.bucket1572.springpotato.common.difficulty_indicator.EasyIndexComponent
@@ -44,12 +45,43 @@ fun DifficultyTag.getFundamentalPoint(): Int =
         DifficultyTag.HARD -> 12
     }
 
-fun DifficultyTag.getSuggestingTime(): Int =
+fun DifficultyTag.getOriginalSuggestingTime(): Int =
     when (this) {
         DifficultyTag.EASY -> 3
         DifficultyTag.INTERMEDIATE -> 5
         DifficultyTag.HARD -> 10
     }
+
+fun DifficultyTag.getBuzzerSuggestingTime(): Int =
+    when (this) {
+        DifficultyTag.EASY -> 1
+        DifficultyTag.INTERMEDIATE -> 2
+        DifficultyTag.HARD -> 4
+    }
+
+fun DifficultyTag.getSuggestingTime(gamePhase: GamePhase, progressRatio: Float): Int {
+    when(gamePhase) {
+        GamePhase.BUZZER_BEATER -> return this.getBuzzerSuggestingTime()
+        GamePhase.MAIN -> {
+            var suggestionBettingTime = this.getOriginalSuggestingTime()
+            if (0.33 > progressRatio) {
+                suggestionBettingTime -= when (this) {
+                    DifficultyTag.EASY -> 1
+                    DifficultyTag.INTERMEDIATE -> 2
+                    DifficultyTag.HARD -> 4
+                }
+            } else if (0.66 > progressRatio) {
+                suggestionBettingTime -= when (this) {
+                    DifficultyTag.EASY -> 0
+                    DifficultyTag.INTERMEDIATE -> 1
+                    DifficultyTag.HARD -> 3
+                }
+            }
+            return suggestionBettingTime
+        }
+        else -> return this.getOriginalSuggestingTime()
+    }
+}
 
 fun DifficultyTag.getMaterial(): Material =
     when (this) {
@@ -60,10 +92,10 @@ fun DifficultyTag.getMaterial(): Material =
 
 fun DifficultyTag.getIndicatorItem(): ItemStack = ItemStack(this.getMaterial(), 1)
 
-fun DifficultyTag.getIndicator(additionalPoint: Int): ItemStack {
+fun DifficultyTag.getIndicator(additionalPoint: Int, gamePhase: GamePhase, progressRatio: Float): ItemStack {
     val lore = listOf(
         ItemType.DIFFICULTY_INDICATOR.typeComponent.getComponent(),
-        DescriptionComponent("시간: ${this.getSuggestingTime()}").getComponent(),
+        DescriptionComponent("시간: ${this.getSuggestingTime(gamePhase, progressRatio)}").getComponent(),
         DescriptionComponent(
             "점수: ${this.getFundamentalPoint()}${if (additionalPoint <= 0) "" else "(+$additionalPoint)"}"
         ).getComponent()
