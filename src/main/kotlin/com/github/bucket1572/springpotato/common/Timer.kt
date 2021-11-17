@@ -25,6 +25,15 @@ class Timer(
         showBossBar()
     }
 
+    fun getProgressRatio(): Float {
+        return value / maxValue
+    }
+
+    fun deleteTimer() {
+        bossBar.progress(0.0f)
+        hideBossBar()
+    }
+
     private fun showBossBar() {
         server.showBossBar(bossBar)
     }
@@ -34,12 +43,12 @@ class Timer(
     }
 
     private fun progress() {
+        value -= delta
         if (value <= 0.0f) {
             runnable.run()
             task?.cancel()
             hideBossBar()
         }
-        value -= delta
         bossBar.progress( value / maxValue )
     }
 }
